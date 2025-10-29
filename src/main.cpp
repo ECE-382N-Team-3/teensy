@@ -2,10 +2,13 @@
 #include <sys/types.h>
 #include "SPI.h"
 #include "ltcadc.h"
+#include "gcodeWriter.h"
 #include <PWM.h>
 
 LTCADC adc_hi(LTC2439_1, 10);  // create an instance of the library with the LTC2439-1 as ADC and digital pin 10 as chip select
 LTCADC adc_lo(LTC2439_1, 9);   // create an instance of the library with the LTC2439-1 as ADC and digital pin 9 as chip select
+
+// gcodeWriter writer;
 
 constexpr double vref_mV = 3300.0/2;
 constexpr double valueMax = 22072;
