@@ -10,15 +10,16 @@
 #include <ostream>
 #ifdef ARDUINO_MODE
 #include "Arduino.h"
-#define MAIN_SERIAL Serial1 // This class will initilize and close this serial
+#define MAIN_SERIAL Serial1 // This class will initialize and close this serial
 #define DEBUG_SERIAL Serial // This is expected to be initialized else where
 #endif
 
 #define GRBL_WAKEUP "\r\n\r\n"
 #define GRBL_ABSOLUTE "G90" // Sets grbl machine to work in absolute coordinates
 #define GRBL_MEASUREMENT "G21" // Sets grbl machine to work in metric system
+#define GRBL_WORKSPACE "G54" // Sets grbl to Workspace 1 (current position = origin)
+#define GRBL_WORKSPACE_PLANES "G17" // Sets Plane to XY
 #define GRBL_MOVE "G00" // Moves grbl quickly to defined point
-#define GRBL_START_END "%" // Signifies the start/end of a file
 #define DEBUG 1
 #define MAX_X 100
 #define MAX_Y 100
@@ -37,6 +38,7 @@ gcodeWriter::gcodeWriter() {
     this->zPos = 0;
 #ifdef ARDUINO_MODE
     MAIN_SERIAL.begin(115200);
+    MAIN_SERIAL.setTimeout(5000);
 #endif
 }
 
@@ -49,7 +51,6 @@ bool gcodeWriter::init() {
 #ifdef ARDUINO_MODE
     clearInputBuffer();
     MAIN_SERIAL.print(GRBL_WAKEUP);
-    MAIN_SERIAL.print(GRBL_START_END);
     delay(2);
     MAIN_SERIAL.flush();
 #else
@@ -107,8 +108,6 @@ bool gcodeWriter::writeZMove(const double z) {
 
 gcodeWriter::~gcodeWriter() {
 #ifdef ARDUINO_MODE
-    MAIN_SERIAL.print(GRBL_START_END);
-    MAIN_SERIAL.flush();
     MAIN_SERIAL.end();
 #endif
 }
@@ -122,14 +121,18 @@ gcodeWriter::~gcodeWriter() {
 bool gcodeWriter::send(const std::string &message) {
     bool ok= false;
 #ifdef ARDUINO_MODE
-    MAIN_SERIAL.print(message.c_str());
-    MAIN_SERIAL.flush();
     clearInputBuffer();
+    MAIN_SERIAL.print((message+'\n').c_str());
+    MAIN_SERIAL.flush();
+    DEBUG_SERIAL.println(message.c_str());
+    DEBUG_SERIAL.flush();
     String input = MAIN_SERIAL.readStringUntil('\n').trim();
     if (input.equals("ok")) {
         ok = true;
+        DEBUG_SERIAL.println(input);
+        DEBUG_SERIAL.flush();
     } else  {
-        DEBUG_SERIAL.print(input);
+        DEBUG_SERIAL.println(input);
         DEBUG_SERIAL.flush();
     }
 #else
