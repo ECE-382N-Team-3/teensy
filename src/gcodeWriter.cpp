@@ -29,7 +29,7 @@
 #define MIN_Z -100
 
 /**
- * Constructor
+ * Constructor.
  * @param mode 0 for default or 1 for debug
  */
 gcodeWriter::gcodeWriter() {
@@ -66,7 +66,7 @@ bool gcodeWriter::init() {
 
 /**
  * Construct a message to move in the x-axis
- * relative to current position
+ * relative to current position.
  * @param x the number of units to move relative to current position
  * @result success(true) or failure(false)
  */
@@ -80,7 +80,7 @@ bool gcodeWriter::writeXMove(const double x) {
 
 /**
  * Construct a message to move in the y-axis
- * relative to current position
+ * relative to current position.
  * @param y the number of units to move relative to current position
  * @result success(true) or failure(false)
  */
@@ -94,7 +94,7 @@ bool gcodeWriter::writeYMove(const double y) {
 
 /**
  * Construct a message to move in the z-axis
- * relative to current position
+ * relative to current position.
  * @param z the number of units to move relative to current position
  * @result success(true) or failure(false)
  */
@@ -114,7 +114,7 @@ gcodeWriter::~gcodeWriter() {
 
 
 /**
- * To send a gcode message
+ * To send a gcode message.
  * @param message Message to be sent
  * @return 0 for success or 1 for failure
  */
@@ -144,7 +144,7 @@ bool gcodeWriter::send(const std::string &message) {
 
 /**
  * Clears the Serial input buffer of any
- * waiting values
+ * waiting values.
  */
 void gcodeWriter::clearInputBuffer() {
 #ifdef ARDUINO_MODE

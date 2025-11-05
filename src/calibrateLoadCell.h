@@ -16,7 +16,7 @@ namespace calibrateLoadCell {
 }
 
 /**
- * Setup for load cell calibration
+ * Setup for load cell calibration.
  * @param loadCell LoadCell class instance to calibrate
  * @param dout pin number
  * @param sck pin number
@@ -40,7 +40,9 @@ inline void calibrateLoadCellSetup(HX711 &loadCell, byte dout, byte sck) {
 
 
 /**
- * Loop for load cell calibration
+ * Loop for load cell calibration.
+ * Use a or + to increase the calibration factor.
+ * Use z or - to decrease the calibration factor.
  * @param loadCell LoadCell to read from
  */
 inline void calibrateLoadCellLoop(HX711 &loadCell) {

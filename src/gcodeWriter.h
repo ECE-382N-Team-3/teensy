@@ -12,7 +12,7 @@
 class gcodeWriter {
     public:
     /**
-     * Constructor
+     * Constructor.
      */
     gcodeWriter();
 
@@ -24,7 +24,7 @@ class gcodeWriter {
 
     /**
      * Construct a message to move in the x-axis
-     * relative to current position
+     * relative to current position.
      * @param x the number of units to move relative to current position
      * @result success(true) or failure(false)
      */
@@ -32,7 +32,7 @@ class gcodeWriter {
 
     /**
      * Construct a message to move in the y-axis
-     * relative to current position
+     * relative to current position.
      * @param y the number of units to move relative to current position
      * @result success(true) or failure(false)
      */
@@ -40,7 +40,7 @@ class gcodeWriter {
 
     /**
      * Construct a message to move in the z-axis
-     * relative to current position
+     * relative to current position.
      * @param z the number of units to move relative to current position
      * @result success(true) or failure(false)
      */
