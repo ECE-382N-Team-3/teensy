@@ -23,5 +23,5 @@ a machine that can process gCode commands, such as [grbl](https://github.com/gne
 
 ### calibrateLoadCell
 This file contains two functions related to calibrating an HX711 loadcell.
-An example can be found here: [link](Load Cell Used: https://www.amazon.com/gp/product/B0BLNQVY2X/ref=ox_sc_act_title_1?smid=A1YZW40LYQY3L1&th=1).
+An example can be found here: [link](https://www.amazon.com/gp/product/B0BLNQVY2X/ref=ox_sc_act_title_1?smid=A1YZW40LYQY3L1&th=1).
 
