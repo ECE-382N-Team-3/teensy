@@ -12,7 +12,7 @@
 #ifndef TEENSY_CALIBRATELOADCELL_H
 #define TEENSY_CALIBRATELOADCELL_H
 namespace calibrateLoadCell {
-    inline float calibration_factor = -15000;
+    inline float calibration_factor = -1500;
 }
 
 /**
@@ -20,8 +20,9 @@ namespace calibrateLoadCell {
  * @param loadCell LoadCell class instance to calibrate
  * @param dout pin number
  * @param sck pin number
+ * @param calibration_factor Optional parameter to pass the calibration_factor (default: -1500)
  */
-inline void calibrateLoadCellSetup(HX711 &loadCell, byte dout, byte sck) {
+inline void calibrateLoadCellSetup(HX711 &loadCell, byte dout, byte sck, const float calibration_factor = -1500) {
     Serial.begin(9600);
     Serial.println("HX711 calibration sketch");
     Serial.println("Remove all weight from scale");
@@ -31,10 +32,11 @@ inline void calibrateLoadCellSetup(HX711 &loadCell, byte dout, byte sck) {
 
     loadCell.begin(dout, sck);
     loadCell.set_scale();
-    loadCell.tare(); //Reset the loadCell to 0
+    loadCell.tare(); // Reset the loadCell to 0
+    calibrateLoadCell::calibration_factor = calibration_factor;
 
-    long zero_factor = loadCell.read_average(); //Get a baseline reading
-    Serial.print("Zero factor: "); //This can be used to remove the need to tare the scale. Useful in permanent scale projects.
+    long zero_factor = loadCell.read_average(); // Get a baseline reading
+    Serial.print("Zero factor: "); // This can be used to remove the need to tare the scale. Useful in permanent scale projects.
     Serial.println(zero_factor);
 }
 
@@ -47,11 +49,11 @@ inline void calibrateLoadCellSetup(HX711 &loadCell, byte dout, byte sck) {
  */
 inline void calibrateLoadCellLoop(HX711 &loadCell) {
 
-    loadCell.set_scale(calibrateLoadCell::calibration_factor); //Adjust to this calibration factor
+    loadCell.set_scale(calibrateLoadCell::calibration_factor); // Adjust to this calibration factor
 
     Serial.print("Reading: ");
     Serial.print(loadCell.get_units(), 1);
-    Serial.print(" lbs"); //Change this to kg and re-adjust the calibration factor if you follow SI units like a sane person
+    Serial.print(" lbs"); // Change this to kg and re-adjust the calibration factor if you follow SI units like a sane person
     Serial.print(" calibration_factor: ");
     Serial.print(calibrateLoadCell::calibration_factor);
     Serial.println();
@@ -66,4 +68,4 @@ inline void calibrateLoadCellLoop(HX711 &loadCell) {
     }
 }
 
-#endif //TEENSY_CALIBRATELOADCELL_H
+#endif // TEENSY_CALIBRATELOADCELL_H

@@ -30,7 +30,7 @@ const uint ADC_array_channel [25] = { 4,  26, 19, 27, 22,
 #define LOADCELL_OFFSET 1
 #define LOADCELl_DIVIDER 1
 #define LOADCELL_THRESHOLD 300 // Used to determine when to stop pressing on object
-constexpr float calibration_factor = -15000;
+constexpr float calibration_factor = -1500;
 HX711 loadCell;
 
 // General Constants for Pins
@@ -162,16 +162,20 @@ void setup() {
     // mainSetup();
 
 
-// Debug for gCode Writer
-// If it works, it will move the X axis forward and backward one step
-    // if (gantryController.init() == false) {
-    //     while (true) {}
-    // }
-    // gantryController.writeXMove(1);
-    // gantryController.writeXMove(-1);
+// Debug for gCode Writer: If it works, it will move the X axis forward and backward one step
+    if (gantryController.init() == false) {
+        while (true) {}
+    }
+    gantryController.writeXMove(20);
+    gantryController.writeXMove(-20);
 
-// Debug/ Calibration for Load Cell
-    calibrateLoadCellSetup(loadCell, LOADCELL_DOUT_PIN, LOADCELL_SCK_PIN);
+// Debug for Load Cell
+    loadCell.begin(LOADCELL_DOUT_PIN, LOADCELL_SCK_PIN);
+    loadCell.set_scale(calibration_factor);
+    loadCell.tare();
+
+//  Calibration for Load Cell
+    // calibrateLoadCellSetup(loadCell, LOADCELL_DOUT_PIN, LOADCELL_SCK_PIN, calibration_factor);
 }
 
 
@@ -193,15 +197,19 @@ void loop() {
     // }
 
 // Messing around with using LoadCell to move Gantry
-    // long loadCellReading = loadCell.get_units(10);
-    // if (loadCellReading > 300) {
-    //     gantryController.writeZMove(0.01);
-    //     delay(1000);
-    //     flickerDebugLED();
-    // }
+    // Serial.print("Old Method: ");
+    // Serial.println(loadCell.get_units(10), 1);
+    double loadCellReading = loadCell.get_units(10);
+    Serial.print("Double Method: ");
+    Serial.println(loadCellReading);
+    if (loadCellReading > 200) {
+        gantryController.writeZMove(0.5);
+        delay(200);
+        flickerDebugLED();
+    }
 
-// Debug/ Calibration loop for load cell
-    calibrateLoadCellLoop(loadCell);
+// Calibration loop for load cell
+    // calibrateLoadCellLoop(loadCell);
 
     // delay(1000);
 }
