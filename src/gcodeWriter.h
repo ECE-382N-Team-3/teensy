@@ -20,28 +20,25 @@ class gcodeWriter {
     * Initializing the grbl receiver.
     * @result success(true) or failure(false)
     */
-    bool init();
+    static bool init();
 
     /**
-     * Construct a message to move in the x-axis
-     * relative to current position.
-     * @param x the number of units to move relative to current position
+     * Construct a message to move in the x-axis.
+     * @param x the number of units to move
      * @result success(true) or failure(false)
      */
     bool writeXMove(double x);
 
     /**
      * Construct a message to move in the y-axis
-     * relative to current position.
-     * @param y the number of units to move relative to current position
+     * @param y the number of units to move
      * @result success(true) or failure(false)
      */
     bool writeYMove(double y);
 
     /**
      * Construct a message to move in the z-axis
-     * relative to current position.
-     * @param z the number of units to move relative to current position
+     * @param z the number of units to move
      * @result success(true) or failure(false)
      */
     bool writeZMove(double z);
@@ -49,9 +46,10 @@ class gcodeWriter {
     ~gcodeWriter();
 
     private:
-    int xPos, yPos, zPos;
+    double xPos, yPos, zPos;
 
     static bool send(const std::string& message);
+    static bool sendMove(const std::string& move_message);
     static void clearInputBuffer();
 
 };

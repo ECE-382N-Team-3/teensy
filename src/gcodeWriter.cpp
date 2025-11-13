@@ -16,21 +16,22 @@
 
 #define GRBL_WAKEUP "\r\n\r\n"
 #define GRBL_ABSOLUTE "G90" // Sets grbl machine to work in absolute coordinates
+#define GRBL_RELATIVE "G91" // Sets grbl machine to work in relative coordinates
 #define GRBL_MEASUREMENT "G21" // Sets grbl machine to work in metric system
 #define GRBL_WORKSPACE "G54" // Sets grbl to Workspace 1 (current position = origin)
 #define GRBL_WORKSPACE_PLANES "G17" // Sets Plane to XY
-#define GRBL_MOVE "G00" // Moves grbl quickly to defined point
-#define DEBUG 1
+// #define GRBL_MOVE "G00" // Moves quickly to defined point
+#define GRBL_MOVE "G01" // Moves quickly to defined point with defined feed-rate
+#define GRBL_SPEED "F100" // Rate at which motors move
 #define MAX_X 100
 #define MAX_Y 100
 #define MAX_Z 100
-#define MIN_X -100
-#define MIN_Y -100
-#define MIN_Z -100
+#define MIN_X (-100)
+#define MIN_Y (-100)
+#define MIN_Z (-100)
 
 /**
  * Constructor.
- * @param mode 0 for default or 1 for debug
  */
 gcodeWriter::gcodeWriter() {
     this->xPos = 0;
@@ -56,53 +57,67 @@ bool gcodeWriter::init() {
 #else
     std::cout << GRBL_WAKEUP << std::endl;
 #endif
-    std::string setUpMessages[] = {GRBL_ABSOLUTE, GRBL_MEASUREMENT};
-    for (std::string message : setUpMessages) {
-        if (!this->send(message)) return false;
+    std::string setUpMessages[] = {GRBL_RELATIVE, GRBL_MEASUREMENT};
+    for (const std::string& message : setUpMessages) {
+        if (!send(message)) return false;
     }
     return true;
 }
 
 
 /**
- * Construct a message to move in the x-axis
- * relative to current position.
- * @param x the number of units to move relative to current position
+ * Construct a message to move in the x-axis.
+ * @param x the number of units to move
  * @result success(true) or failure(false)
  */
 bool gcodeWriter::writeXMove(const double x) {
     this->xPos += x;
-    if (this->xPos > MAX_X) this->xPos = MAX_X;
-    else if (this->xPos < MIN_X) this->xPos = MIN_X;
-    return this->send(GRBL_MOVE " X" + std::to_string(this->xPos));
+    if (this->xPos > MAX_X)
+        this->xPos = MAX_X;
+    else if (this->xPos < MIN_X)
+        this->xPos = MIN_X;
+    else return sendMove("X" + std::to_string(x));
+
+    DEBUG_SERIAL.println("Message not sent: Requested X move reached MAX or MIN value");
+    return false;
 }
 
 
 /**
  * Construct a message to move in the y-axis
- * relative to current position.
- * @param y the number of units to move relative to current position
+ * @param y the number of units to move
  * @result success(true) or failure(false)
  */
 bool gcodeWriter::writeYMove(const double y) {
     this->yPos += y;
-    if (this->yPos > MAX_Y) this->yPos = MAX_Y;
-    else if (this->yPos < MIN_Y) this->yPos = MIN_Y;
-    return this->send(GRBL_MOVE" Y" + std::to_string(this->yPos));
+    if (this->yPos > MAX_Y)
+        this->yPos = MAX_Y;
+    else if (this->yPos < MIN_Y)
+        this->yPos = MIN_Y;
+    else
+        return sendMove("Y" + std::to_string(y));
+
+    DEBUG_SERIAL.println("Message not sent: Requested Y Move reached MAX or MIN value");
+    return false;
 }
 
 
 /**
  * Construct a message to move in the z-axis
- * relative to current position.
- * @param z the number of units to move relative to current position
+ * @param z the number of units to move
  * @result success(true) or failure(false)
  */
 bool gcodeWriter::writeZMove(const double z) {
     this->zPos += z;
-    if (this->zPos > MAX_Z) this->zPos = MAX_Z;
-    else if (this->zPos < MIN_Z) this->zPos = MIN_Z;
-    return this->send(GRBL_MOVE" Z" + std::to_string(this->zPos));
+    if (this->zPos > MAX_Z)
+        this->zPos = MAX_Z;
+    else if (this->zPos < MIN_Z)
+        this->zPos = MIN_Z;
+    else
+        return sendMove("Z"+ std::to_string(z));
+
+    DEBUG_SERIAL.println("Message not sent: Reqeust Z Move reached MAX or MIN Value");
+    return false;
 }
 
 
@@ -124,14 +139,20 @@ bool gcodeWriter::send(const std::string &message) {
     clearInputBuffer();
     MAIN_SERIAL.print((message+'\n').c_str());
     MAIN_SERIAL.flush();
-    DEBUG_SERIAL.println(message.c_str());
     DEBUG_SERIAL.flush();
     String input = MAIN_SERIAL.readStringUntil('\n').trim();
+    DEBUG_SERIAL.print("Sent Message: ");
+    DEBUG_SERIAL.println(message.c_str());
     if (input.equals("ok")) {
         ok = true;
+        DEBUG_SERIAL.print("Success:");
         DEBUG_SERIAL.println(input);
         DEBUG_SERIAL.flush();
-    } else  {
+    } else  if (input == nullptr) {
+        DEBUG_SERIAL.println("Timeout Error");
+        DEBUG_SERIAL.flush();
+    } else {
+        DEBUG_SERIAL.print("ERROR: ");
         DEBUG_SERIAL.println(input);
         DEBUG_SERIAL.flush();
     }
@@ -140,6 +161,19 @@ bool gcodeWriter::send(const std::string &message) {
     ok = true;
 #endif
     return ok;
+}
+
+/**
+ * Small wrapper to send a move message.
+ * @param move_message ex. "X0.0"
+ * @return success(true) or failure(false)
+ */
+bool gcodeWriter::sendMove(const std::string& move_message) {
+    return send(
+        GRBL_MOVE
+        " " + move_message +
+        " " + GRBL_SPEED
+        );
 }
 
 /**

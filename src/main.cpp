@@ -29,7 +29,7 @@ const uint ADC_array_channel [25] = { 4,  26, 19, 27, 22,
 #define LOADCELL_SCK_PIN 15
 #define LOADCELL_OFFSET 1
 #define LOADCELl_DIVIDER 1
-#define LOADCELL_THRESHOLD 300 // Used to determine when to stop pressing on object
+#define LOADCELL_THRESHOLD 150 // Used to determine when to stop pressing on object
 constexpr float calibration_factor = -1500;
 HX711 loadCell;
 
@@ -85,26 +85,34 @@ void readAndPrintFsrArray() {
 
 /**
  * Process to stamp down on the object and read the FSR array.
+ * @param debug set to 1 to NOT read FSR array
  */
-void stamp() {
+void stamp(const int debug = 0) {
 
     int moves = 0;
 
+    double loadCellReading = loadCell.get_units(10);
+
     // Move the gantry down until the threshold limit on loadCell is reached
-    while (loadCell.get_units(10) < LOADCELL_THRESHOLD) {
-        gantryController.writeZMove(0.01);
+    while (loadCellReading < LOADCELL_THRESHOLD) {
+        gantryController.writeZMove(0.5);
         moves++;
         delay(1000);
+        loadCellReading = loadCell.get_units(10);
+        Serial.print("Double Method: ");
+        Serial.println(loadCellReading);
     }
     flickerDebugLED();
 
     // Get and Send FSR Readings
-    readAndPrintFsrArray();
+    if (!debug) {
+        readAndPrintFsrArray();
+    }
 
     // Move the gantry back to original position
     for (int i = 0; i < moves; i++) {
-        gantryController.writeZMove(-0.01);
-        delay(500);
+        gantryController.writeZMove(-0.5);
+        delay(1000);
     }
     flickerDebugLED();
 }
@@ -126,7 +134,9 @@ void mainSetup() {
     // Initialize gantry
     if (gantryController.init() == false) {
         digitalWrite(DEBUG_LED, LOW);
-        while (true) {}
+        Serial.println ("Failed Gantry Initialization");
+        while (true) {
+        }
     }
 
     // Initialize LoadCell
@@ -163,11 +173,15 @@ void setup() {
 
 
 // Debug for gCode Writer: If it works, it will move the X axis forward and backward one step
+    delay(2000);
     if (gantryController.init() == false) {
-        while (true) {}
+        Serial.println ("Failed Gantry Initialization");
+        while (true) {
+        }
     }
-    gantryController.writeXMove(20);
-    gantryController.writeXMove(-20);
+    // gantryController.writeXMove(20);
+    // gantryController.writeXMove(-20);
+
 
 // Debug for Load Cell
     loadCell.begin(LOADCELL_DOUT_PIN, LOADCELL_SCK_PIN);
@@ -196,16 +210,24 @@ void loop() {
     //     delay(1000);
     // }
 
-// Messing around with using LoadCell to move Gantry
-    // Serial.print("Old Method: ");
-    // Serial.println(loadCell.get_units(10), 1);
-    double loadCellReading = loadCell.get_units(10);
-    Serial.print("Double Method: ");
-    Serial.println(loadCellReading);
-    if (loadCellReading > 200) {
-        gantryController.writeZMove(0.5);
-        delay(200);
-        flickerDebugLED();
+// LoadCell Threshold Debugging
+    // double loadCellReading = loadCell.get_units(10);
+    // Serial.print("LoadCell Reading: ");
+    // Serial.println(loadCellReading);
+    // if (loadCellReading > LOADCELL_THRESHOLD) {
+    //     while (true) {
+    //         Serial.println("Yippy");
+    //         delay(200);
+    //         flickerDebugLED();
+    //     }
+    // }
+    // delay(1000);
+
+// LoadCell and Gantry Debugging
+    stamp(1);
+    Serial.println("Finished Stamping");
+    while (true) {
+
     }
 
 // Calibration loop for load cell
