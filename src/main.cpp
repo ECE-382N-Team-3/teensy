@@ -97,7 +97,7 @@ void stamp(const int debug = 0) {
     while (loadCellReading < LOADCELL_THRESHOLD) {
         gantryController.writeZMove(0.5);
         moves++;
-        delay(1000);
+        delay(250);
         loadCellReading = loadCell.get_units(10);
         Serial.print("Double Method: ");
         Serial.println(loadCellReading);
@@ -112,7 +112,7 @@ void stamp(const int debug = 0) {
     // Move the gantry back to original position
     for (int i = 0; i < moves; i++) {
         gantryController.writeZMove(-0.5);
-        delay(1000);
+        delay(300);
     }
     flickerDebugLED();
 }
@@ -143,6 +143,8 @@ void mainSetup() {
     loadCell.begin(LOADCELL_DOUT_PIN, LOADCELL_SCK_PIN);
     loadCell.set_scale(calibration_factor);
     loadCell.tare();
+
+    // Add loop to manually move the gantry untill enter is set
 }
 
 
@@ -167,29 +169,29 @@ void setup() {
     Serial.begin(9600);
     pinMode(DEBUG_LED, OUTPUT);
     digitalWrite(DEBUG_LED, HIGH);
+    delay(2000);
 
 // Setup for normal operation
     // mainSetup();
 
 
 // Debug for gCode Writer: If it works, it will move the X axis forward and backward one step
-    delay(2000);
-    if (gantryController.init() == false) {
-        Serial.println ("Failed Gantry Initialization");
-        while (true) {
-        }
-    }
+    // if (gantryController.init() == false) {
+    //     Serial.println ("Failed Gantry Initialization");
+    //     while (true) {
+    //     }
+    // }
     // gantryController.writeXMove(20);
     // gantryController.writeXMove(-20);
 
 
 // Debug for Load Cell
-    loadCell.begin(LOADCELL_DOUT_PIN, LOADCELL_SCK_PIN);
-    loadCell.set_scale(calibration_factor);
-    loadCell.tare();
+    // loadCell.begin(LOADCELL_DOUT_PIN, LOADCELL_SCK_PIN);
+    // loadCell.set_scale(calibration_factor);
+    // loadCell.tare();
 
 //  Calibration for Load Cell
-    // calibrateLoadCellSetup(loadCell, LOADCELL_DOUT_PIN, LOADCELL_SCK_PIN, calibration_factor);
+    calibrateLoadCellSetup(loadCell, LOADCELL_DOUT_PIN, LOADCELL_SCK_PIN, calibration_factor);
 }
 
 
@@ -224,14 +226,27 @@ void loop() {
     // delay(1000);
 
 // LoadCell and Gantry Debugging
-    stamp(1);
-    Serial.println("Finished Stamping");
-    while (true) {
-
-    }
+    // stamp(1); // 0,0
+    // Serial.println("Finished Stamping");
+    // gantryController.writeXMove(-62.5);
+    // delay(5000);
+    // // stamp(1); // 1,0
+    // Serial.println("Finished Stamping");
+    // gantryController.writeYMove(62.5);
+    // delay(5000);
+    // // stamp(1); // 1, 1
+    // Serial.println("Finished Stamping");
+    // gantryController.writeXMove(62.5);
+    // delay(5000);
+    // // stamp(1); // 0, 1
+    // gantryController.writeYMove(-62.5);
+    // Serial.println("Finished Stamping");
+    // while (true) {
+    //
+    // }
 
 // Calibration loop for load cell
-    // calibrateLoadCellLoop(loadCell);
+    calibrateLoadCellLoop(loadCell);
 
     // delay(1000);
 }

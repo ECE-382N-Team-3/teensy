@@ -76,7 +76,7 @@ bool gcodeWriter::writeXMove(const double x) {
         this->xPos = MAX_X;
     else if (this->xPos < MIN_X)
         this->xPos = MIN_X;
-    else return sendMove("X" + std::to_string(x));
+    else return sendMove_XY("X" + std::to_string(x));
 
     DEBUG_SERIAL.println("Message not sent: Requested X move reached MAX or MIN value");
     return false;
@@ -95,7 +95,7 @@ bool gcodeWriter::writeYMove(const double y) {
     else if (this->yPos < MIN_Y)
         this->yPos = MIN_Y;
     else
-        return sendMove("Y" + std::to_string(y));
+        return sendMove_XY("Y" + std::to_string(y));
 
     DEBUG_SERIAL.println("Message not sent: Requested Y Move reached MAX or MIN value");
     return false;
@@ -173,6 +173,19 @@ bool gcodeWriter::sendMove(const std::string& move_message) {
         GRBL_MOVE
         " " + move_message +
         " " + GRBL_SPEED
+        );
+}
+
+/**
+ * Small wrapper to send a move message.
+ * @param move_message ex. "X0.0"
+ * @return success(true) or failure(false)
+ */
+bool gcodeWriter::sendMove_XY(const std::string& move_message) {
+    return send(
+        GRBL_MOVE
+        " " + move_message +
+        " F6000"
         );
 }
 

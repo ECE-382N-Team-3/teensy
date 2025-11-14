@@ -50,6 +50,9 @@ class gcodeWriter {
 
     static bool send(const std::string& message);
     static bool sendMove(const std::string& move_message);
+
+    static bool sendMove_XY(const std::string &move_message);
+
     static void clearInputBuffer();
 
 };
