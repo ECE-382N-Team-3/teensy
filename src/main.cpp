@@ -29,7 +29,7 @@ const uint ADC_array_channel [25] = { 4,  26, 19, 27, 22,
 #define LOADCELL_SCK_PIN 15
 #define LOADCELL_OFFSET 1
 #define LOADCELl_DIVIDER 1
-#define LOADCELL_THRESHOLD 150 // Used to determine when to stop pressing on object
+#define LOADCELL_THRESHOLD 115 // Used to determine when to stop pressing on object
 constexpr float calibration_factor = -1500;
 HX711 loadCell;
 
@@ -176,22 +176,22 @@ void setup() {
 
 
 // Debug for gCode Writer: If it works, it will move the X axis forward and backward one step
-    // if (gantryController.init() == false) {
-    //     Serial.println ("Failed Gantry Initialization");
-    //     while (true) {
-    //     }
-    // }
+    if (gantryController.init() == false) {
+        Serial.println ("Failed Gantry Initialization");
+        while (true) {
+        }
+    }
     // gantryController.writeXMove(20);
     // gantryController.writeXMove(-20);
 
 
 // Debug for Load Cell
-    // loadCell.begin(LOADCELL_DOUT_PIN, LOADCELL_SCK_PIN);
-    // loadCell.set_scale(calibration_factor);
-    // loadCell.tare();
+    loadCell.begin(LOADCELL_DOUT_PIN, LOADCELL_SCK_PIN);
+    loadCell.set_scale(calibration_factor);
+    loadCell.tare();
 
 //  Calibration for Load Cell
-    calibrateLoadCellSetup(loadCell, LOADCELL_DOUT_PIN, LOADCELL_SCK_PIN, calibration_factor);
+    // calibrateLoadCellSetup(loadCell, LOADCELL_DOUT_PIN, LOADCELL_SCK_PIN, calibration_factor);
 }
 
 
@@ -226,7 +226,7 @@ void loop() {
     // delay(1000);
 
 // LoadCell and Gantry Debugging
-    // stamp(1); // 0,0
+     stamp(1); // 0,0
     // Serial.println("Finished Stamping");
     // gantryController.writeXMove(-62.5);
     // delay(5000);
@@ -240,10 +240,10 @@ void loop() {
     // delay(5000);
     // // stamp(1); // 0, 1
     // gantryController.writeYMove(-62.5);
-    // Serial.println("Finished Stamping");
-    // while (true) {
-    //
-    // }
+    Serial.println("Finished Stamping");
+    while (true) {
+
+    }
 
 // Calibration loop for load cell
     calibrateLoadCellLoop(loadCell);
