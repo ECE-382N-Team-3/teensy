@@ -29,7 +29,7 @@ const uint ADC_array_channel [25] = { 4,  26, 19, 27, 22,
 #define LOADCELL_SCK_PIN 15
 #define LOADCELL_OFFSET 1
 #define LOADCELl_DIVIDER 1
-#define LOADCELL_THRESHOLD 115 // Used to determine when to stop pressing on object
+#define LOADCELL_THRESHOLD 60 // Used to determine when to stop pressing on object
 constexpr float calibration_factor = -1500;
 HX711 loadCell;
 
@@ -93,16 +93,24 @@ void stamp(const int debug = 0) {
 
     double loadCellReading = loadCell.get_units(10);
 
+    String input;
+    bool abort = false;
     // Move the gantry down until the threshold limit on loadCell is reached
-    while (loadCellReading < LOADCELL_THRESHOLD) {
+    while (loadCellReading < LOADCELL_THRESHOLD && !abort) {
         gantryController.writeZMove(0.5);
         moves++;
         delay(250);
         loadCellReading = loadCell.get_units(10);
         Serial.print("Double Method: ");
         Serial.println(loadCellReading);
+        input = Serial.readStringUntil('\n').trim();
+        if (input.equals("e")) abort = true;
     }
     flickerDebugLED();
+
+    while (!input.equals("d")) {
+        input = Serial.readStringUntil('\n').trim();
+    }
 
     // Get and Send FSR Readings
     if (!debug) {
@@ -223,30 +231,33 @@ void loop() {
     //         flickerDebugLED();
     //     }
     // }
-    // delay(1000);
+    delay(1000);
 
 // LoadCell and Gantry Debugging
-     stamp(1); // 0,0
-    // Serial.println("Finished Stamping");
-    // gantryController.writeXMove(-62.5);
-    // delay(5000);
-    // // stamp(1); // 1,0
-    // Serial.println("Finished Stamping");
-    // gantryController.writeYMove(62.5);
-    // delay(5000);
-    // // stamp(1); // 1, 1
-    // Serial.println("Finished Stamping");
-    // gantryController.writeXMove(62.5);
-    // delay(5000);
-    // // stamp(1); // 0, 1
-    // gantryController.writeYMove(-62.5);
+    stamp(1); // 0,0
+    Serial.println("Finished Stamping");
+    gantryController.writeXMove(-62.5);
+    delay(5000);
+    loadCell.tare();
+    stamp(1); // 1,0
+    Serial.println("Finished Stamping");
+    gantryController.writeYMove(62.5);
+    delay(5000);
+    loadCell.tare();
+    stamp(1); // 1, 1
+    Serial.println("Finished Stamping");
+    gantryController.writeXMove(62.5);
+    delay(5000);
+    loadCell.tare();
+    stamp(1); // 0, 1
+    gantryController.writeYMove(-62.5);
     Serial.println("Finished Stamping");
     while (true) {
 
     }
 
 // Calibration loop for load cell
-    calibrateLoadCellLoop(loadCell);
+    // calibrateLoadCellLoop(loadCell);
 
     // delay(1000);
 }
