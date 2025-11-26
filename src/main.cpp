@@ -85,9 +85,14 @@ void readAndPrintFsrArray() {
 
 /**
  * Process to stamp down on the object and read the FSR array.
- * @param debug set to 1 to NOT read FSR array
+ * Press e while moving object up to EJECT, i.e. stop moving up
+ * Press r while moving object up to RESET, i.e. move gantry to original position
+ * Press d to move down after gantry has stop moving up either from load cell or pressing e
+ *      Note: Pressing r will not wait for the user to press d, and immediately reposition the gantry
+ * @return bool Determine if operation was successful (only reason would fail if rest was called for)
  */
-void stamp(const int debug = 0) {
+bool stamp() {
+    bool reset = false;
 
     int moves = 0;
 
@@ -96,7 +101,7 @@ void stamp(const int debug = 0) {
     String input;
     bool abort = false;
     // Move the gantry down until the threshold limit on loadCell is reached
-    while (loadCellReading < LOADCELL_THRESHOLD && !abort) {
+    while (loadCellReading < LOADCELL_THRESHOLD && !abort && !reset) {
         gantryController.writeZMove(0.5);
         moves++;
         delay(250);
@@ -105,17 +110,18 @@ void stamp(const int debug = 0) {
         Serial.println(loadCellReading);
         input = Serial.readStringUntil('\n').trim();
         if (input.equals("e")) abort = true;
+        else if (input.equals("r")) reset = true;
     }
     flickerDebugLED();
 
-    while (!input.equals("d")) {
+    while (!input.equals("d") && !reset) {
         input = Serial.readStringUntil('\n').trim();
     }
 
     // Get and Send FSR Readings
-    if (!debug) {
-        readAndPrintFsrArray();
-    }
+    // if (!debug) {
+    //     readAndPrintFsrArray();
+    // }
 
     // Move the gantry back to original position
     for (int i = 0; i < moves; i++) {
@@ -123,6 +129,8 @@ void stamp(const int debug = 0) {
         delay(300);
     }
     flickerDebugLED();
+
+    return !reset;
 }
 
 
@@ -131,13 +139,13 @@ void stamp(const int debug = 0) {
  */
 void mainSetup() {
     // Initialize Miscellaneous parameters
-    pinMode(STAMP_PIN, INPUT);
+    // pinMode(STAMP_PIN, INPUT);
 
     // Initialize FSR Array
-    SPI.begin();
-    analogWriteFrequency(ADC_CLOCK_PIN, ADC_CLOCK_FREQ*1000);
-    analogWriteResolution(10);
-    analogWrite(ADC_CLOCK_PIN, 512);
+    // SPI.begin();
+    // analogWriteFrequency(ADC_CLOCK_PIN, ADC_CLOCK_FREQ*1000);
+    // analogWriteResolution(10);
+    // analogWrite(ADC_CLOCK_PIN, 512);
 
     // Initialize gantry
     if (gantryController.init() == false) {
@@ -151,8 +159,6 @@ void mainSetup() {
     loadCell.begin(LOADCELL_DOUT_PIN, LOADCELL_SCK_PIN);
     loadCell.set_scale(calibration_factor);
     loadCell.tare();
-
-    // Add loop to manually move the gantry untill enter is set
 }
 
 
@@ -160,9 +166,44 @@ void mainSetup() {
  * Intended loop for normal operation.
  */
 void mainLoop() {
+    const int gridDelay = 5000;
+
+    Serial.println("Starting Main Loop");
     // This assumes gantry and object are positioned correctly PRIOR to powering the system
-    while (digitalRead(STAMP_PIN) == 0) {}
-    stamp();
+    if (stamp()) { // 0,0
+        gantryController.writeXMove(-62.5);
+        delay(gridDelay);
+        loadCell.tare();
+        if (stamp()) { // 1,0
+            gantryController.writeYMove(62.5);
+            delay(gridDelay);
+            loadCell.tare();
+            if (stamp()) { // 1, 1
+                gantryController.writeXMove(62.5);
+                delay(gridDelay);
+                loadCell.tare();
+                // No Reset checked need bc it will always move it back to the OG positon
+                stamp(); // 0, 1
+                gantryController.writeYMove(-62.5);
+                delay(gridDelay);
+            } else { // Reset called at 1,1 so move X and Y back
+                gantryController.writeXMove(62.5);
+                delay(gridDelay);
+                gantryController.writeYMove(-62.5);
+                delay(gridDelay);
+            }
+        } else { // Reset called at 1,0 so move X back
+            gantryController.writeXMove(62.5);
+            delay(gridDelay);
+        }
+    }
+
+    loadCell.tare();
+    Serial.println("Finished Main Loop: Press S to start again");
+    String input;
+    while (!input.equals("s")) {
+        input = Serial.readStringUntil('\n').trim();
+    }
 }
 
 
@@ -180,26 +221,28 @@ void setup() {
     delay(2000);
 
 // Setup for normal operation
-    // mainSetup();
+    mainSetup();
 
 
 // Debug for gCode Writer: If it works, it will move the X axis forward and backward one step
-    if (gantryController.init() == false) {
-        Serial.println ("Failed Gantry Initialization");
-        while (true) {
-        }
-    }
+    // if (gantryController.init() == false) {
+    //     Serial.println ("Failed Gantry Initialization");
+    //     while (true) {
+    //     }
+    // }
     // gantryController.writeXMove(20);
     // gantryController.writeXMove(-20);
 
 
 // Debug for Load Cell
-    loadCell.begin(LOADCELL_DOUT_PIN, LOADCELL_SCK_PIN);
-    loadCell.set_scale(calibration_factor);
-    loadCell.tare();
+    // loadCell.begin(LOADCELL_DOUT_PIN, LOADCELL_SCK_PIN);
+    // loadCell.set_scale(calibration_factor);
+    // loadCell.tare();
 
 //  Calibration for Load Cell
     // calibrateLoadCellSetup(loadCell, LOADCELL_DOUT_PIN, LOADCELL_SCK_PIN, calibration_factor);
+
+    delay(1000); // To allow for users to connect via Serial in time
 }
 
 
@@ -209,7 +252,7 @@ void setup() {
 void loop() {
 
 // Main Code
-    // mainLoop();
+    mainLoop();
 
 // Debug Code for gCode gantryController
     // if (gantryController.init() == false) {
@@ -231,30 +274,29 @@ void loop() {
     //         flickerDebugLED();
     //     }
     // }
-    delay(1000);
 
 // LoadCell and Gantry Debugging
-    stamp(1); // 0,0
-    Serial.println("Finished Stamping");
-    gantryController.writeXMove(-62.5);
-    delay(5000);
-    loadCell.tare();
-    stamp(1); // 1,0
-    Serial.println("Finished Stamping");
-    gantryController.writeYMove(62.5);
-    delay(5000);
-    loadCell.tare();
-    stamp(1); // 1, 1
-    Serial.println("Finished Stamping");
-    gantryController.writeXMove(62.5);
-    delay(5000);
-    loadCell.tare();
-    stamp(1); // 0, 1
-    gantryController.writeYMove(-62.5);
-    Serial.println("Finished Stamping");
-    while (true) {
-
-    }
+    // stamp(); // 0,0
+    // Serial.println("Finished Stamping");
+    // gantryController.writeXMove(-62.5);
+    // delay(5000);
+    // loadCell.tare();
+    // stamp(); // 1,0
+    // Serial.println("Finished Stamping");
+    // gantryController.writeYMove(62.5);
+    // delay(5000);
+    // loadCell.tare();
+    // stamp(); // 1, 1
+    // Serial.println("Finished Stamping");
+    // gantryController.writeXMove(62.5);
+    // delay(5000);
+    // loadCell.tare();
+    // stamp(); // 0, 1
+    // gantryController.writeYMove(-62.5);
+    // Serial.println("Finished Stamping");
+    // while (true) {
+    //
+    // }
 
 // Calibration loop for load cell
     // calibrateLoadCellLoop(loadCell);
